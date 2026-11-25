@@ -2,7 +2,9 @@
 
 Run a small team of Claude Code chats on one project. There's a coordinator, one build chat per area of your app, parallel helper agents ("lanes") doing the work, and a sceptical critic checking it. **You stay in charge.** The rules are enforced by hooks and a small CLI, so they hold even when a chat forgets them.
 
-<img width="1568" height="904" alt="v4" src="https://github.com/user-attachments/assets/5d90811f-079c-4e78-9b7c-17d536165ba7" />
+<p align="center">
+  <img width="700" alt="agent-lanes layers" src="https://github.com/user-attachments/assets/5d90811f-079c-4e78-9b7c-17d536165ba7" />
+</p>
 
 > **Requirements:** macOS · [Claude Code](https://code.claude.com/docs/en/setup) (needs a paid Claude plan) · Python 3.8+
 > **Platform:** built for macOS. Windows isn't supported yet. Linux will probably work, but it isn't tested.
