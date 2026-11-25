@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# agent-lanes launcher (macOS).
+#   ./crew start <chat>     start Claude Code as that chat (one Terminal tab each)
+#   ./crew board            dashboard; any other command goes to coord/agentctl.py
+set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PY="{{PY}}"
+AC=("$PY" "$ROOT/coord/agentctl.py")
+
+if [[ $# -eq 0 || "$1" == "help" ]]; then
+  cat <<EOF
+agent-lanes
+  ./crew up                open a Terminal window per chat, all started
+  ./crew start <chat>      start one chat in this window
+  ./crew board             everything at a glance
+  ./crew inbox             your messages
+  ./crew test <item> human pass|fail "note"   your sign-off
+  ./crew doctor            check the setup
+  ./crew -h                all commands
+
+Chats: $("${AC[@]}" chats | tr '\n' ' ')
+EOF
+  exit 0
+fi
+
+if [[ "$1" == "up" ]]; then
+  shift
+  if [[ "$(uname)" != "Darwin" ]]; then
+    echo "./crew up opens Terminal windows, so it needs macOS. Start each chat yourself: ./crew start <chat>" >&2
+    exit 1
+  fi
+  [[ $# -gt 0 ]] || set -- $("${AC[@]}" chats)
+
+  trusted() {  # has the user accepted Claude Code's "trust this folder" prompt here?
+    "$PY" - "$ROOT" <<'PYEOF'
+import json, os, sys
+try:
+    projects = json.load(open(os.path.expanduser("~/.claude.json"))).get("projects", {})
+except Exception:
+    sys.exit(1)
+sys.exit(0 if projects.get(sys.argv[1], {}).get("hasTrustDialogAccepted") else 1)
+PYEOF
+  }
+
+  launch() {  # new Terminal window running: ./crew start <chat> [first prompt]
+    local chat="$1" first="$ROOT/coord/.state/first-prompt-$1.txt"
+    local cmd="cd $(printf %q "$ROOT") && ./crew start $chat"
+    if [[ -f "$first" ]]; then
+      cmd+=" $(printf %q "$(cat "$first")")"
+      rm -f "$first"
+    fi
+    cmd=${cmd//\\/\\\\}
+    cmd=${cmd//\"/\\\"}
+    osascript -e "tell application \"Terminal\" to do script \"$cmd\"" -e 'tell application "Terminal" to activate' >/dev/null
+  }
+
+  if trusted; then
+    for c in "$@"; do launch "$c"; done
+  else
+    echo "First run: a Claude Code window opens for '$1'. Choose Yes when it asks to trust this folder."
+    echo "The other chats open automatically after that…"
+    launch "$1"
+    shift
+    for _ in $(seq 1 300); do trusted && break; sleep 1; done
+    if ! trusted; then
+      echo "Still waiting for the trust prompt. Once you've chosen Yes, run: ./crew up $*" >&2
+      exit 1
+    fi
+    for c in "$@"; do launch "$c"; done
+  fi
+  echo "✅ Chats are open, one window each. This window is yours: ./crew board · ./crew inbox"
+  exit 0
+fi
+
+if [[ "$1" == "start" ]]; then
+  chat="${2:-}"
+  if [[ -z "$chat" ]] || ! "${AC[@]}" chats | grep -qx "$chat"; then
+    echo "Usage: ./crew start <chat>. Chats: $("${AC[@]}" chats | tr '\n' ' ')" >&2
+    exit 1
+  fi
+  if [[ -f "$ROOT/.claude/settings.local.json" ]] && grep -q '"AGENT_ID"' "$ROOT/.claude/settings.local.json"; then
+    echo "This folder has a fixed identity in .claude/settings.local.json (from './crew join')." >&2
+    echo "Remove AGENT_ID from that file to use './crew start', or use worktrees (see README)." >&2
+    exit 1
+  fi
+  if ! command -v claude >/dev/null; then
+    echo "Claude Code isn't installed. See https://code.claude.com/docs/en/setup" >&2
+    exit 1
+  fi
+  shift 2
+  cd "$ROOT"
+  AGENT_ID="$chat" AGENTCTL_HOME="$ROOT/coord" exec claude --model "${CREW_MODEL:-opus}" "$@"
+fi
+
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then exec "${AC[@]}" -h; fi
+exec "${AC[@]}" "$@"

@@ -1,0 +1,11 @@
+{
+  "_how": "Only the human edits this file (chats are blocked). Each entry is a standing approval a chat may use without asking. Leave 'standing' empty to require the human every time.",
+  "_example": {
+    "id": "A1",
+    "who": "pricing",
+    "action": "publish the pricing screen to the test app",
+    "condition": "the AI test passes 100% and nothing outside src/pricing changed",
+    "expires": "2027-02-28"
+  },
+  "standing": []
+}
