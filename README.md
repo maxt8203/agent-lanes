@@ -2,19 +2,12 @@
 
 Run a small team of Claude Code chats on one project. There's a coordinator, one build chat per area of your app, parallel helper agents ("lanes") doing the work, and a sceptical critic checking it. **You stay in charge.** The rules are enforced by hooks and a small CLI, so they hold even when a chat forgets them.
 
+<img width="1568" height="904" alt="v4" src="https://github.com/user-attachments/assets/5d90811f-079c-4e78-9b7c-17d536165ba7" />
+
 > **Requirements:** macOS · [Claude Code](https://code.claude.com/docs/en/setup) (needs a paid Claude plan) · Python 3.8+
 > **Platform:** built for macOS. Windows isn't supported yet. Linux will probably work, but it isn't tested.
 > **Usage:** every chat and lane runs on **Opus**, for quality. That uses up your Claude limits much faster than Sonnet would. See [Use a cheaper model](#use-a-cheaper-model).
 
-```
-You (approve, test, decide)
- └─ coordinator chat        talks to you and every chat, keeps the Q&A, settles disputes
-     ├─ build chat: core    scopes, briefs, checks ─┬─ lane-coder / editor / data / researcher
-     ├─ build chat: pricing                         ├─ lane-tester   (AI test)
-     └─ ...                                         └─ lane-critic   (challenges plans, tries to break work)
-```
-
----
 
 ## Quick start (3 steps)
 
