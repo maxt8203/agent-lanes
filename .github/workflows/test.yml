@@ -3,13 +3,19 @@ on: [push, pull_request]
 jobs:
   test:
     strategy:
+      fail-fast: false   # one broken job shouldn't cancel the others
       matrix:
-        os: [macos-latest, ubuntu-latest]
-        python: ["3.9", "3.12"]
+        include:
+          # Apple's built-in python3 (3.9), which is what most Mac users run the installer with
+          - { os: macos-latest, python: system, py: /usr/bin/python3 }
+          - { os: macos-latest, python: "3.13", py: python3 }
+          - { os: ubuntu-latest, python: "3.13", py: python3 }
+    name: ${{ matrix.os }} · python ${{ matrix.python }}
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - if: matrix.python != 'system'
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
-      - run: python -m unittest discover tests -v
+      - run: ${{ matrix.py }} --version && ${{ matrix.py }} -m unittest discover tests -v
